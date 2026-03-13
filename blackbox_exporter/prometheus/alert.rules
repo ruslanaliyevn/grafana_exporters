@@ -1,0 +1,67 @@
+groups:
+- name: example
+  rules:
+
+
+
+# ─── Blackbox Alerts ──────────────────────────────────────────────
+
+  - alert: SiteDown
+    expr: probe_success{job="blackbox_http_ssl"} == 0
+    for: 1m
+    labels:
+      severity: critical
+      service: blackbox
+    annotations:
+      summary: "Site DOWN: {{ $labels.instance }}"
+      description: "{{ $labels.instance }} has been unreachable for more than 1 minute."
+
+  - alert: SlowResponseTime
+    expr: probe_duration_seconds{job="blackbox_http_ssl"} > 3
+    for: 2m
+    labels:
+      severity: warning
+      service: blackbox
+    annotations:
+      summary: "Slow response time: {{ $labels.instance }}"
+      description: "Response time is above 3s. Current: {{ printf \"%.3f\" $value }}s"
+
+  - alert: SlowProbeResponse
+    expr: probe_duration_seconds{job="blackbox_http_ssl"} > 1
+    for: 2m
+    labels:
+      severity: warning
+      service: blackbox
+    annotations:
+      summary: "Slow probe response: {{ $labels.instance }}"
+      description: "Probe duration exceeded 1s. Current: {{ printf \"%.3f\" $value }}s"
+
+  - alert: SlowDNSLookup
+    expr: probe_dns_lookup_time_seconds{job="blackbox_http_ssl"} > 1
+    for: 2m
+    labels:
+      severity: warning
+      service: blackbox
+    annotations:
+      summary: "Slow DNS lookup: {{ $labels.instance }}"
+      description: "DNS lookup is taking more than 1s. Current: {{ printf \"%.3f\" $value }}s"
+
+  - alert: SSLCertExpiringSoon
+    expr: (probe_ssl_earliest_cert_expiry{job="blackbox_http_ssl"} - time()) / 86400 < 30
+    for: 1h
+    labels:
+      severity: warning
+      service: blackbox
+    annotations:
+      summary: "SSL certificate expiring soon: {{ $labels.instance }}"
+      description: "SSL cert for {{ $labels.instance }} expires in less than 30 days. Current: {{ printf \"%.1f\" $value }} days."
+
+  - alert: SSLCertExpiringCritical
+    expr: (probe_ssl_earliest_cert_expiry{job="blackbox_http_ssl"} - time()) / 86400 < 7
+    for: 1h
+    labels:
+      severity: critical
+      service: blackbox
+    annotations:
+      summary: "SSL certificate expiring critically soon: {{ $labels.instance }}"
+      description: "SSL cert for {{ $labels.instance }} expires in less than 7 days. Current: {{ printf \"%.1f\" $value }} days."
